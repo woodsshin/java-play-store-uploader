@@ -32,6 +32,7 @@ import net.dongliu.apk.parser.bean.ApkMeta;
  */
 public class App {
     private static final String MIME_TYPE_APK = "application/vnd.android.package-archive";
+    private static final String MIME_TYPE_OBB = "application/octet-stream";
 
     @Option(name = "-key", required = true, usage = "JSON key file of authorized service account")
     private String jsonKeyPath;
@@ -41,6 +42,12 @@ public class App {
 
     @Option(name = "-apk", required = true, usage = "The apk file to upload")
     private String apkPath;
+
+    @Option(name = "-apk64", required = true, usage = "The apk file to upload")
+    private String apk64Path;
+
+    @Option(name = "-obb", required = true, usage = "The obb file to upload")
+    private String obbPath;
 
     @Option(name = "-track", required = true, usage = "Release track to use. Eg. alpha, beta, production etc")
     private String trackName;
@@ -67,6 +74,7 @@ public class App {
         try {
             // do upload
             new App().parseArgs(args).upload();
+            //new App().upload();
         } catch (Exception e) {
             // log message and exit with bad code
             System.err.println();
@@ -152,6 +160,9 @@ public class App {
         // load apk file info
         System.out.println("Loading apk file information...");
         Path apkFile = FileSystems.getDefault().getPath(this.apkPath).normalize();
+
+        Path apk64File = FileSystems.getDefault().getPath(this.apk64Path).normalize();
+
         ApkFile apkInfo = new ApkFile(apkFile.toFile());
         ApkMeta apkMeta = apkInfo.getApkMeta();
         final String applicationName = this.appName == null ? apkMeta.getName() : this.appName;
@@ -161,6 +172,10 @@ public class App {
         System.out.println(String.format("App Version Code: %d", apkMeta.getVersionCode()));
         System.out.println(String.format("App Version Name: %s", apkMeta.getVersionName()));
         apkInfo.close();
+
+        // load obb file info
+        System.out.println("Loading apk file information...");
+        Path obbFile = FileSystems.getDefault().getPath(this.obbPath).normalize();
 
         // load release notes
         System.out.println("Loading release notes...");
@@ -190,6 +205,19 @@ public class App {
             AbstractInputStreamContent apkContent = new FileContent(MIME_TYPE_APK, apkFile.toFile());
             Apk apk = publisher.edits().apks().upload(packageName, editId, apkContent).execute();
             System.out.println(String.format("Apk uploaded. Version Code: %s", apk.getVersionCode()));
+
+            // upload the 64 apk
+            System.out.println("Uploading apk 64 file...");
+            AbstractInputStreamContent apk64Content = new FileContent(MIME_TYPE_APK, apk64File.toFile());
+            Apk apk64 = publisher.edits().apks().upload(packageName, editId, apk64Content).execute();
+            System.out.println(String.format("Apk uploaded. Version Code: %s", apk64.getVersionCode()));
+
+            // upload the obb
+            System.out.println("Uploading obb file...");
+            String expansionFileType = "main"; // either "main" or "patch"
+            AbstractInputStreamContent obbContent = new FileContent(MIME_TYPE_OBB, obbFile.toFile());
+            publisher.edits().expansionfiles().upload(packageName, editId, apk.getVersionCode(), expansionFileType, obbContent).execute();
+            System.out.println(String.format("obb uploaded. Version Code: %s", apk.getVersionCode()));
 
             // create a release on track
             System.out.println(String.format("On track:%s. Creating a release...", this.trackName));
