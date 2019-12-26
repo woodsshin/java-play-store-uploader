@@ -37,7 +37,7 @@ public class App {
     @Option(name = "-key", required = true, usage = "JSON key file of authorized service account")
     private String jsonKeyPath;
 
-    @Option(name = "-name", usage = "(optional) App name on Play Store (defaults to name in apk)")
+    //@Option(name = "-name", usage = "(optional) App name on Play Store (defaults to name in apk)")
     private String appName;
 
     @Option(name = "-apk", required = true, usage = "The apk file to upload")
@@ -49,8 +49,11 @@ public class App {
     @Option(name = "-obb", required = true, usage = "The obb file to upload")
     private String obbPath;
 
+    @Option(name = "-obb64", required = true, usage = "The obb file to upload")
+    private String obb64Path;
+
     @Option(name = "-track", required = true, usage = "Release track to use. Eg. alpha, beta, production etc")
-    private String trackName;
+    private String trackName = "Alpha";
 
     @Option(name = "-notes", forbids = "-notesFile", usage = "(optional) Release notes")
     private String notes;
@@ -74,7 +77,6 @@ public class App {
         try {
             // do upload
             new App().parseArgs(args).upload();
-            //new App().upload();
         } catch (Exception e) {
             // log message and exit with bad code
             System.err.println();
@@ -176,6 +178,7 @@ public class App {
         // load obb file info
         System.out.println("Loading apk file information...");
         Path obbFile = FileSystems.getDefault().getPath(this.obbPath).normalize();
+        Path obb64File = FileSystems.getDefault().getPath(this.obb64Path).normalize();
 
         // load release notes
         System.out.println("Loading release notes...");
@@ -206,12 +209,6 @@ public class App {
             Apk apk = publisher.edits().apks().upload(packageName, editId, apkContent).execute();
             System.out.println(String.format("Apk uploaded. Version Code: %s", apk.getVersionCode()));
 
-            // upload the 64 apk
-            System.out.println("Uploading apk 64 file...");
-            AbstractInputStreamContent apk64Content = new FileContent(MIME_TYPE_APK, apk64File.toFile());
-            Apk apk64 = publisher.edits().apks().upload(packageName, editId, apk64Content).execute();
-            System.out.println(String.format("Apk uploaded. Version Code: %s", apk64.getVersionCode()));
-
             // upload the obb
             System.out.println("Uploading obb file...");
             String expansionFileType = "main"; // either "main" or "patch"
@@ -219,10 +216,27 @@ public class App {
             publisher.edits().expansionfiles().upload(packageName, editId, apk.getVersionCode(), expansionFileType, obbContent).execute();
             System.out.println(String.format("obb uploaded. Version Code: %s", apk.getVersionCode()));
 
+            // upload the 64 apk
+            System.out.println("Uploading apk 64 file...");
+            AbstractInputStreamContent apk64Content = new FileContent(MIME_TYPE_APK, apk64File.toFile());
+            Apk apk64 = publisher.edits().apks().upload(packageName, editId, apk64Content).execute();
+            System.out.println(String.format("Apk uploaded. Version Code: %s", apk64.getVersionCode()));
+
+            // upload the 64 obb
+            System.out.println("Uploading obb 64 file...");
+            String expansionFileType64 = "main"; // either "main" or "patch"
+            AbstractInputStreamContent obb64Content = new FileContent(MIME_TYPE_OBB, obb64File.toFile());
+            publisher.edits().expansionfiles().upload(packageName, editId, apk64.getVersionCode(), expansionFileType64, obb64Content).execute();
+            System.out.println(String.format("obb uploaded. Version Code: %s", apk64.getVersionCode()));
+
             // create a release on track
+            List<Long> versionCodes = new ArrayList<>();
+            versionCodes.add(Long.valueOf(apk.getVersionCode()));
+            versionCodes.add(Long.valueOf(apk64.getVersionCode()));
+
             System.out.println(String.format("On track:%s. Creating a release...", this.trackName));
             TrackRelease release = new TrackRelease().setName("Automated upload").setStatus("completed")
-                    .setVersionCodes(Collections.singletonList((long) apk.getVersionCode()))
+                    .setVersionCodes(versionCodes)
                     .setReleaseNotes(releaseNotes);
             Track track = new Track().setReleases(Collections.singletonList(release));
             track = publisher.edits().tracks().update(packageName, editId, this.trackName, track).execute();
