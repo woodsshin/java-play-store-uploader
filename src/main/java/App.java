@@ -43,13 +43,13 @@ public class App {
     @Option(name = "-apk", required = true, usage = "The apk file to upload")
     private String apkPath;
 
-    @Option(name = "-apk64", required = true, usage = "The apk file to upload")
+    @Option(name = "-apk64", required = true, usage = "The apk64 file to upload")
     private String apk64Path;
 
     @Option(name = "-obb", required = true, usage = "The obb file to upload")
     private String obbPath;
 
-    @Option(name = "-obb64", required = true, usage = "The obb file to upload")
+    @Option(name = "-obb64", required = true, usage = "The obb64 file to upload")
     private String obb64Path;
 
     @Option(name = "-track", required = true, usage = "Release track to use. Eg. alpha, beta, production etc")
