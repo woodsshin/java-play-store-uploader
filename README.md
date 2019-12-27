@@ -42,7 +42,7 @@ Build signed production android apk file to upload. In case of a CI server, this
 Execute the binary, passing required data in arguments.
 
 ```bash
-PlayStoreUploader -key "key.json" -apk "app.apk" -track "alpha" -name "myApp" -notes "new release"
+PlayStoreUploader -key "key.json" -apk "app.apk" -obb "app.obb" -apk64 "app64.apk" -obb64 "app64.obb" -track "alpha" -name "myApp" -notes "new release"
 ```
 
 #### CLI Options
