@@ -37,7 +37,7 @@ public class App {
     @Option(name = "-key", required = true, usage = "JSON key file of authorized service account")
     private String jsonKeyPath;
 
-    //@Option(name = "-name", usage = "(optional) App name on Play Store (defaults to name in apk)")
+    @Option(name = "-name", usage = "(optional) App name on Play Store (defaults to name in apk)")
     private String appName;
 
     @Option(name = "-apk", required = true, usage = "The apk file to upload")
